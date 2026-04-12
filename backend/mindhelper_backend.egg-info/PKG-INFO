@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: mindhelper-backend
+Version: 0.1.0
+Summary: MindHelper backend powered by Django and PostgreSQL
+Requires-Python: >=3.12
+Requires-Dist: Django<5.3,>=5.1
+Requires-Dist: djangorestframework<4.0,>=3.16
+Requires-Dist: django-cors-headers<5.0,>=4.7
+Requires-Dist: psycopg[binary]<4.0,>=3.2
+Provides-Extra: dev
+Requires-Dist: pytest<9.0,>=8.3; extra == "dev"
+Requires-Dist: pytest-django<5.0,>=4.11; extra == "dev"
+Requires-Dist: factory-boy<4.0,>=3.3; extra == "dev"
+Requires-Dist: coverage[toml]<8.0,>=7.6; extra == "dev"
+Requires-Dist: ruff<1.0,>=0.11; extra == "dev"

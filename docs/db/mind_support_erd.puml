@@ -1,0 +1,276 @@
+@startuml
+title MindSupport Service - Optimized ER Diagram
+
+hide methods
+hide stereotypes
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam roundcorner 10
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+skinparam class {
+  BackgroundColor<<core>> #EAF3FF
+  BackgroundColor<<ops>> #EAFBF1
+  BackgroundColor<<safety>> #FFF4E6
+  BackgroundColor<<admin>> #F3ECFF
+  BackgroundColor<<dict>> #F7F7F7
+  BorderColor #4B5563
+  ArrowColor #334155
+}
+
+package "Identity & Access" {
+  entity "user_account" as user_account <<core>> {
+    *id : uuid <<PK>>
+    --
+    email : varchar(255) <<UK>>
+    password_hash : varchar(255)
+    display_name : varchar(120)
+    status : varchar(32)
+    is_staff : boolean
+    is_superuser : boolean
+    created_at : timestamptz
+    last_login_at : timestamptz
+  }
+
+  entity "role" as role <<dict>> {
+    *id : uuid <<PK>>
+    --
+    code : varchar(32) <<UK>>
+    name : varchar(64)
+  }
+
+  entity "user_role" as user_role <<core>> {
+    *id : uuid <<PK>>
+    --
+    user_id : uuid <<FK>>
+    role_id : uuid <<FK>>
+    assigned_at : timestamptz
+  }
+
+  entity "channel_account" as channel_account <<core>> {
+    *id : uuid <<PK>>
+    --
+    user_id : uuid <<FK>>
+    channel_type : varchar(32)
+    external_user_id : varchar(255)
+    external_chat_id : varchar(255)
+    linked_at : timestamptz
+    is_active : boolean
+  }
+}
+
+package "Chat & Safety (Reduced)" {
+  entity "user_chat" as user_chat <<core>> {
+    *id : uuid <<PK>>
+    --
+    user_id : uuid <<FK, UK>>
+    model_version_id : uuid <<FK, nullable>>
+    status : varchar(32)
+    created_at : timestamptz
+    updated_at : timestamptz
+  }
+
+  entity "chat_message" as chat_message <<core>> {
+    *id : uuid <<PK>>
+    --
+    chat_id : uuid <<FK>>
+    sender_role : varchar(16)
+    content_text : text
+    risk_score : numeric(6,5)
+    created_at : timestamptz
+  }
+
+  entity "crisis_event" as crisis_event <<safety>> {
+    *id : uuid <<PK>>
+    --
+    chat_id : uuid <<FK>>
+    trigger_message_id : uuid <<FK, nullable>>
+    emergency_resource_id : uuid <<FK, nullable>>
+    risk_level : varchar(16)
+    status : varchar(32)
+    action_note : text
+    detected_at : timestamptz
+    resolved_at : timestamptz
+  }
+
+  entity "emergency_resource" as emergency_resource <<dict>> {
+    *id : uuid <<PK>>
+    --
+    region_code : varchar(16)
+    service_name : varchar(255)
+    contact_phone : varchar(64)
+    contact_url : varchar(512)
+    is_active : boolean
+  }
+}
+
+package "Assessments (Reduced)" {
+  entity "assessment_template" as assessment_template <<ops>> {
+    *id : uuid <<PK>>
+    --
+    code : varchar(64) <<UK>>
+    title : varchar(255)
+    is_active : boolean
+  }
+
+  entity "assessment_question" as assessment_question <<ops>> {
+    *id : uuid <<PK>>
+    --
+    template_id : uuid <<FK>>
+    question_text : text
+    response_format : varchar(32)
+    min_value : numeric(8,2)
+    max_value : numeric(8,2)
+    order_index : int
+  }
+
+  entity "assessment_session" as assessment_session <<ops>> {
+    *id : uuid <<PK>>
+    --
+    user_id : uuid <<FK>>
+    chat_id : uuid <<FK, nullable>>
+    template_id : uuid <<FK>>
+    status : varchar(32)
+    total_score : numeric(10,4)
+    severity_level : varchar(32)
+    started_at : timestamptz
+    completed_at : timestamptz
+  }
+
+  entity "assessment_answer" as assessment_answer <<ops>> {
+    *id : uuid <<PK>>
+    --
+    session_id : uuid <<FK>>
+    question_id : uuid <<FK>>
+    answer_value : numeric(10,4)
+    answer_text : text
+    answered_at : timestamptz
+  }
+}
+
+package "Specialists & Map" {
+  entity "specialist" as specialist <<core>> {
+    *id : uuid <<PK>>
+    --
+    full_name : varchar(255)
+    profession : varchar(32)
+    license_number : varchar(64)
+    is_verified : boolean
+    rating_avg : numeric(3,2)
+  }
+
+  entity "specialist_location" as specialist_location <<core>> {
+    *id : uuid <<PK>>
+    --
+    specialist_id : uuid <<FK>>
+    address_line : varchar(512)
+    city : varchar(120)
+    latitude : numeric(9,6)
+    longitude : numeric(9,6)
+    consultation_price : numeric(10,2)
+    currency : char(3)
+    is_active : boolean
+  }
+
+  entity "appointment" as appointment <<ops>> {
+    *id : uuid <<PK>>
+    --
+    user_id : uuid <<FK>>
+    specialist_id : uuid <<FK>>
+    location_id : uuid <<FK, nullable>>
+    start_at : timestamptz
+    end_at : timestamptz
+    status : varchar(32)
+    created_at : timestamptz
+  }
+}
+
+package "Admin & Model" {
+  entity "neural_model_version" as neural_model_version <<admin>> {
+    *id : uuid <<PK>>
+    --
+    version_tag : varchar(64) <<UK>>
+    model_name : varchar(120)
+    provider : varchar(120)
+    safety_profile : varchar(64)
+    is_active : boolean
+    deployed_at : timestamptz
+    created_by_admin_user_id : uuid <<FK>>
+  }
+
+  entity "moderation_case" as moderation_case <<admin>> {
+    *id : uuid <<PK>>
+    --
+    chat_id : uuid <<FK>>
+    message_id : uuid <<FK, nullable>>
+    reason : text
+    status : varchar(32)
+    opened_by_admin_user_id : uuid <<FK>>
+    opened_at : timestamptz
+    closed_at : timestamptz
+  }
+
+  entity "site_content" as site_content <<admin>> {
+    *id : uuid <<PK>>
+    --
+    content_type : varchar(64)
+    slug : varchar(255) <<UK>>
+    title : varchar(255)
+    body : text
+    is_published : boolean
+    updated_by_admin_user_id : uuid <<FK>>
+    updated_at : timestamptz
+  }
+}
+
+' Identity
+user_account ||--o{ user_role
+role ||--o{ user_role
+user_account ||--o{ channel_account
+
+' Chat & Safety
+user_account ||--o| user_chat : "one chat per user"
+neural_model_version ||--o{ user_chat
+user_chat ||--o{ chat_message
+user_chat ||--o{ crisis_event
+chat_message ||--o{ crisis_event
+emergency_resource ||--o{ crisis_event
+
+' Assessments
+assessment_template ||--o{ assessment_question
+assessment_template ||--o{ assessment_session
+user_account ||--o{ assessment_session
+user_chat ||--o{ assessment_session
+assessment_session ||--o{ assessment_answer
+assessment_question ||--o{ assessment_answer
+
+' Specialists
+specialist ||--o{ specialist_location
+user_account ||--o{ appointment
+specialist ||--o{ appointment
+specialist_location ||--o{ appointment
+
+' Admin
+user_account ||--o{ neural_model_version
+user_account ||--o{ moderation_case
+user_account ||--o{ site_content
+user_chat ||--o{ moderation_case
+chat_message ||--o{ moderation_case
+
+note right of user_account
+PK = Primary Key:
+unique row identifier.
+
+FK = Foreign Key:
+reference to PK in another table.
+end note
+
+note right of user_chat
+One chat per user:
+user_id is marked as UK.
+Local "clear chat" UI button
+is not stored in ER.
+end note
+
+@enduml
