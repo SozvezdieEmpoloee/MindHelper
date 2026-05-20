@@ -1,231 +1,173 @@
 # MindHelper
 
-MindHelper is a web service and Telegram bot for supportive question-answer interaction and preliminary psychological state screening. The project combines a React web interface, Django REST backend, PostgreSQL database, Telegram bot integration and a local Qwen model served through Ollama.
+MindHelper — прототип вопросно-ответной системы для предварительной психологической диагностики и поддержки пользователя на основе нейросетевой модели. Проект объединяет веб-интерфейс, Telegram-бота, серверную часть на Django, базу данных PostgreSQL и локальный запуск LLM через Ollama/Qwen.
 
-> The service is not a medical diagnostic tool and does not replace emergency care, a psychiatrist, psychotherapist or clinical psychologist. Safety logic is used to reduce harmful answers and route high-risk situations to emergency resources.
+Сервис задуман как безопасная точка первого контакта: пользователь может описать свое состояние, получить бережный ответ, простые рекомендации самопомощи, экстренные контакты и информацию о специалистах. Система не ставит медицинский диагноз и не заменяет обращение к врачу, психологу, психотерапевту или экстренным службам.
 
-## Preview
+## Интерфейс
 
-### Program Architecture
+### Главная страница и регистрация
 
-![Program implementation](docs/thesis/diagrams/12_program_implementation_preview.png)
+![Главная страница и регистрация MindHelper](docs/assets/mindhelper-home-register.png)
 
-### Database Model
+### Чат поддержки, экстренные контакты и карта специалистов
 
-![ER model](docs/thesis/diagrams/11_er_entities_by_blocks_preview.png)
+![Чат поддержки и справочник специалистов MindHelper](docs/assets/mindhelper-chat-directory.png)
 
-## Main Features
+## Основная идея
 
-- User registration and login for the web interface.
-- Single persistent user chat with message history.
-- Local neural model integration through Ollama and Qwen.
-- Safety-flow for risk screening, crisis routing and response control.
-- Emergency resources and specialist directory.
-- Telegram bot that uses the same backend chat pipeline as the website.
-- Django Admin for content, model versions, emergency resources and moderation.
-- PostgreSQL schema with UUID identifiers.
-- Automated tests for core backend components.
+MindHelper решает задачу предварительной поддержки пользователя в ситуациях тревоги, стресса, эмоционального напряжения и неопределенности. Ключевая цель проекта — не заменить специалиста, а помочь человеку быстрее сформулировать проблему, получить безопасный первичный ответ и при необходимости перейти к более надежному сценарию помощи.
 
-## Technology Stack
+В основе проекта лежит единый серверный контур: сайт и Telegram-бот обращаются к одной базе данных, одному сервису обработки сообщений и одной нейросетевой модели. Благодаря этому история диалога, кризисные события, справочная информация и версии модели хранятся централизованно.
 
-| Layer | Technology |
+## Возможности
+
+- Веб-чат поддержки с сохранением истории сообщений для зарегистрированного пользователя.
+- Telegram-бот, работающий как дополнительный канал общения с тем же backend-контуром.
+- Интеграция локальной нейросетевой модели Qwen через Ollama.
+- Safety-flow для выявления потенциально опасных сообщений и ограничения вредных ответов.
+- Уровни риска: `low`, `elevated`, `high`, `critical`.
+- Фиксация кризисных событий в базе данных для последующего анализа и аудита.
+- Справочник экстренных ресурсов, включая горячие линии психологической помощи.
+- Каталог специалистов и организаций с адресами, ценами и отображением на карте.
+- Django Admin для управления моделями, контентом, специалистами, экстренными ресурсами и служебными данными.
+- PostgreSQL-схема с UUID-идентификаторами и связанной доменной моделью.
+- Набор backend-тестов для проверки ключевой бизнес-логики.
+
+## Архитектура
+
+![Архитектура программной реализации](docs/thesis/diagrams/12_program_implementation_preview.png)
+
+Проект разделен на клиентскую и серверную части. Клиентская часть реализована на React и TypeScript, серверная часть — на Django и Django REST Framework. PostgreSQL используется как основное хранилище данных, а Ollama обеспечивает локальный запуск Qwen-модели без передачи пользовательских сообщений внешнему LLM-провайдеру.
+
+Общая логика обработки сообщения выглядит так:
+
+1. Пользователь отправляет сообщение через сайт или Telegram.
+2. Backend сохраняет пользовательское сообщение в `chat_message`.
+3. Safety-контур оценивает текст и определяет уровень риска.
+4. При необходимости создается запись `crisis_event` и выбирается сценарий эскалации.
+5. Для допустимого сценария формируется запрос к Qwen через Ollama.
+6. Ответ модели проходит ограничения policy-layer и сохраняется в истории чата.
+7. Пользователь получает ответ, а администратор может анализировать события через Django Admin.
+
+## Модель данных
+
+![ER-диаграмма MindHelper](docs/thesis/diagrams/11_er_entities_by_blocks_preview.png)
+
+База данных сгруппирована вокруг нескольких смысловых блоков:
+
+| Блок | Назначение |
+| --- | --- |
+| Пользователи и роли | Хранение аккаунтов, ролей и внешних каналов связи пользователя. |
+| Чат | Хранение единого пользовательского диалога и всех сообщений. |
+| Нейросеть | Учет используемых версий модели и параметров интеграции. |
+| Safety-flow | Регистрация кризисных событий, уровней риска и маршрутов обработки. |
+| Опросники | Шаблоны, вопросы, сессии прохождения и ответы пользователя. |
+| Справочник помощи | Экстренные контакты, специалисты, организации и адреса на карте. |
+| Администрирование | Управление пользовательским контентом и служебной информацией. |
+
+Ключевая сущность пользовательского сценария — `user_chat`: она связывает пользователя, сообщения, выбранную версию нейросети, результаты оценки риска и дополнительные диагностические сессии. Такой подход позволяет не создавать отдельную логику для сайта и Telegram-бота, а использовать общий сервис обработки сообщений.
+
+## Нейросетевая часть
+
+В проекте используется локальная LLM-модель семейства Qwen, запускаемая через Ollama. Такой вариант выбран из-за трех причин: возможность локального запуска, отсутствие зависимости от закрытого API и достаточное качество генерации русскоязычных ответов для прототипа вопросно-ответной системы.
+
+Нейросетевая часть не ограничивается прямым вызовом модели. Перед генерацией и после нее применяется дополнительная серверная логика:
+
+- подготовка системного промпта с правилами безопасного поведения;
+- передача части истории диалога для сохранения контекста;
+- определение риска пользовательского сообщения до ответа модели;
+- запрет на медицинские назначения, диагнозы и опасные инструкции;
+- замена ответа на кризисный сценарий при критическом уровне риска;
+- сохранение версии модели, участвующей в генерации ответа.
+
+Полноценное дообучение модели рассматривается как перспективный этап. В текущей реализации основной акцент сделан на более реалистичный и контролируемый путь улучшения: prompt-policy, red-team сценарии, safety-evaluation, расширение корпуса опасных и пограничных примеров, а затем возможное LoRA/fine-tuning на проверенном датасете.
+
+## Safety-Flow
+
+Safety-flow — это программный контур, который снижает вероятность вредного ответа нейросети. Он не полагается только на саму LLM, а добавляет отдельный слой правил, маршрутизации и аудита.
+
+В текущей логике учитываются следующие ситуации:
+
+- прямые и косвенные формулировки суицидального риска;
+- намерение причинить себе вред;
+- высокая эмоциональная дезорганизация;
+- просьбы о медицинских назначениях или опасных действиях;
+- сообщения, требующие показа экстренных контактов;
+- ответы модели, которые не должны содержать диагнозы, лекарства или инструкции вреда.
+
+Для кризисных сообщений создается запись `crisis_event`, где фиксируются уровень риска, статус обработки, код маршрута и необходимость последующего анализа. Это делает safety-логику не просто набором условий в коде, а частью проверяемой архитектуры проекта.
+
+## Telegram-Бот
+
+Telegram-бот реализован как отдельный канал доступа к сервису. Он не содержит полностью независимой логики консультаций, а обращается к тем же backend-сервисам, что и сайт. Это важно для целостности системы: обработка сообщений, safety-flow, история диалога и экстренные ресурсы остаются едиными.
+
+В боте предусмотрены базовые пользовательские команды, приветственное сообщение, обращение к чату поддержки и получение справочной информации из базы данных. Такой подход позволяет расширять Telegram-канал без дублирования бизнес-логики.
+
+## Администрирование
+
+Административная часть построена на Django Admin. Через нее можно управлять справочной и служебной информацией проекта:
+
+- версиями нейросетевой модели;
+- экстренными контактами;
+- специалистами и организациями;
+- адресами и координатами для карты;
+- пользовательскими аккаунтами и ролями;
+- сообщениями, кризисными событиями и safety-аудитом;
+- контентными блоками сайта.
+
+Админка нужна не только для технического обслуживания, но и для быстрой актуализации данных без прямого изменения базы через SQL.
+
+## Технологический стек
+
+| Уровень | Технологии |
 | --- | --- |
 | Frontend | React, TypeScript, Vite |
 | Backend | Python, Django, Django REST Framework |
-| Database | PostgreSQL |
-| LLM runtime | Ollama + Qwen |
-| Bot | python-telegram-bot, long polling |
-| Admin | Django Admin |
-| Tests | pytest, pytest-django |
+| База данных | PostgreSQL |
+| Нейросетевая модель | Ollama, Qwen |
+| Telegram | python-telegram-bot, long polling |
+| Администрирование | Django Admin |
+| Тестирование | pytest, pytest-django |
+| Документация | PlantUML, Markdown, DOCX-материалы диплома |
 
-## Repository Structure
+## Структура репозитория
 
 ```text
 MindHelper/
-|-- backend/                  # Django backend
-|   |-- apps/                 # Domain applications
-|   |-- config/               # Django settings and URLs
-|   |-- tests/                # Backend tests
-|   |-- .env.example          # Safe local configuration template
+|-- backend/                  # Django backend и доменные приложения
+|   |-- apps/                 # accounts, chat, neural_engine, directory и др.
+|   |-- config/               # настройки Django и маршрутизация
+|   |-- tests/                # backend-тесты
+|   |-- .env.example          # безопасный пример локальной конфигурации
 |   `-- pyproject.toml
 |-- frontend/                 # React/Vite frontend
-|   |-- src/
+|   |-- src/                  # компоненты, API-клиент, страницы
 |   |-- package.json
 |   `-- vite.config.ts
 |-- docs/
-|   |-- db/sql/               # PostgreSQL schema and seed scripts
-|   `-- thesis/diagrams/      # Architecture and ER diagrams
+|   |-- assets/               # изображения для README
+|   |-- db/sql/               # SQL-схема и тестовые данные
+|   `-- thesis/               # материалы дипломной работы и диаграммы
+|-- .gitignore
 `-- README.md
 ```
 
-## Backend Setup
+## Безопасность данных
 
-```powershell
-cd backend
-..\.venv\Scripts\Activate.ps1
-```
+В репозиторий не должны попадать реальные токены, пароли, локальные `.env`-файлы, временные кеши тестов и системные файлы IDE. Для этого подготовлен `.gitignore`, а пример конфигурации вынесен в `backend/.env.example` без реальных секретов.
 
-If the virtual environment does not exist yet:
+Особенно важно не публиковать:
 
-```powershell
-python -m venv ..\.venv
-..\.venv\Scripts\Activate.ps1
-python -m pip install -U pip
-pip install -e ".[dev]"
-```
+- `TELEGRAM_BOT_TOKEN`;
+- реальные пароли PostgreSQL;
+- приватные API-ключи;
+- локальные файлы с токенами;
+- временные папки `pytest-cache-files-*`;
+- `.venv`, `node_modules`, `.idea` и другие локальные артефакты.
 
-Create local environment configuration:
+## Статус проекта
 
-```powershell
-copy .env.example .env
-```
+Проект находится в состоянии функционального дипломного прототипа. Реализованы основные пользовательские сценарии: веб-интерфейс, регистрация, чат, Telegram-бот, интеграция с локальной нейросетью, справочник помощи, карта специалистов, административная панель, PostgreSQL-модель данных и safety-контур.
 
-Then fill local values in `backend/.env`:
-
-- `DJANGO_SECRET_KEY`
-- `POSTGRES_PASSWORD`
-- `TELEGRAM_BOT_TOKEN`
-- `LLM_OLLAMA_MODEL`
-
-Do not commit `.env` or token files.
-
-Run migrations:
-
-```powershell
-python manage.py migrate
-```
-
-Create an admin user:
-
-```powershell
-python manage.py createsuperuser
-```
-
-Start backend:
-
-```powershell
-python manage.py runserver
-```
-
-Backend URLs:
-
-- API: `http://127.0.0.1:8000/api/v1/`
-- Admin: `http://127.0.0.1:8000/admin/`
-
-## Frontend Setup
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend URL:
-
-```text
-http://localhost:5173
-```
-
-## Ollama / Qwen
-
-Install and start Ollama, then pull the model used by the project:
-
-```powershell
-ollama pull qwen3:8b
-ollama serve
-```
-
-In another terminal, activate the model version in the database:
-
-```powershell
-cd backend
-..\.venv\Scripts\Activate.ps1
-python manage.py activate_ollama_model
-```
-
-The backend expects Ollama at:
-
-```text
-http://127.0.0.1:11434
-```
-
-## Telegram Bot
-
-Create a bot with BotFather and put the token into `backend/.env`:
-
-```env
-TELEGRAM_BOT_TOKEN=replace-me
-```
-
-Configure bot commands:
-
-```powershell
-cd backend
-python manage.py configure_telegram_bot
-```
-
-Run bot worker:
-
-```powershell
-python manage.py run_telegram_bot
-```
-
-The bot uses long polling, so a public webhook server is not required for local development.
-
-## Tests
-
-```powershell
-cd backend
-pytest
-```
-
-If temporary folders like `pytest-cache-files-*` appear, they can be deleted. They are generated by test execution and are ignored by Git.
-
-## Database Scripts
-
-The current PostgreSQL schema and seed data are stored here:
-
-- `docs/db/sql/01_schema.sql`
-- `docs/db/sql/02_seed.sql`
-
-The Django models and migrations are the main source of truth for application development.
-
-## Security Notes
-
-- Never commit `.env`, real Telegram tokens, API keys or private certificates.
-- `backend/.env.example` is only a safe template.
-- Local files like `Telegram_Api.txt` must stay outside Git.
-- The LLM is constrained by safety-flow, crisis-event logging and emergency-resource routing.
-- The project is intended for preliminary support scenarios, not clinical diagnosis.
-
-## Useful Commands
-
-Run backend:
-
-```powershell
-cd backend
-..\.venv\Scripts\Activate.ps1
-python manage.py runserver
-```
-
-Run frontend:
-
-```powershell
-cd frontend
-npm run dev
-```
-
-Run Telegram bot:
-
-```powershell
-cd backend
-..\.venv\Scripts\Activate.ps1
-python manage.py run_telegram_bot
-```
-
-Run tests:
-
-```powershell
-cd backend
-pytest
-```
+Дальнейшее развитие проекта может включать расширение red-team корпуса, улучшение качества классификации риска, сбор проверенного датасета, экспертную оценку ответов и постепенный переход к LoRA/fine-tuning при наличии достаточной методической базы.
