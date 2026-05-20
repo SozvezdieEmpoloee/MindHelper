@@ -1,0 +1,25 @@
+@startuml
+title Конвейер формирования ответа нейросети
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName "Times New Roman"
+
+component "История диалога\nпоследние сообщения" as History #DBEAFE
+component "Профиль состояния\nscenario classifier" as State #FEF3C7
+component "System prompt\nграницы компетенции,\nзапрет диагнозов и лекарств" as Prompt #FEF3C7
+component "Ollama request\nmodel=qwen3" as Request #FCE7F3
+component "Raw model reply" as Raw #FCE7F3
+component "Response policy\nантигаллюцинации,\nanti-harm,\nобрыв фраз" as Guard #FEF3C7
+component "Финальный ответ\nпользователю" as Final #DCFCE7
+component "Логирование\nmodel provider, policy flag" as Audit #EDE9FE
+
+History --> Request
+State --> Prompt
+Prompt --> Request
+Request --> Raw
+Raw --> Guard
+Guard --> Final
+Guard --> Audit
+@enduml

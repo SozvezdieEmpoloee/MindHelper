@@ -33,9 +33,11 @@ INSTALLED_APPS = [
     "apps.common",
     "apps.accounts",
     "apps.chat",
+    "apps.neural_engine",
     "apps.assessments",
     "apps.directory",
     "apps.platform_ops",
+    "apps.telegram_bot",
 ]
 
 MIDDLEWARE = [
@@ -114,6 +116,25 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
+LLM_PROVIDER = get_env("LLM_PROVIDER", "rule_based").lower()
+LLM_OLLAMA_BASE_URL = get_env("LLM_OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+LLM_OLLAMA_MODEL = get_env("LLM_OLLAMA_MODEL", "qwen3:8b")
+LLM_OLLAMA_TIMEOUT_SECONDS = float(get_env("LLM_OLLAMA_TIMEOUT_SECONDS", "120"))
+LLM_HISTORY_MESSAGES = int(get_env("LLM_HISTORY_MESSAGES", "16"))
+LLM_TEMPERATURE = float(get_env("LLM_TEMPERATURE", "0.4"))
+LLM_MAX_OUTPUT_TOKENS = int(get_env("LLM_MAX_OUTPUT_TOKENS", "640"))
+
+LLM_MODEL_VERSION_TAG = get_env("LLM_MODEL_VERSION_TAG", "ollama-qwen3-8b-local")
+LLM_MODEL_DISPLAY_NAME = get_env("LLM_MODEL_DISPLAY_NAME", "Qwen3-8B")
+LLM_PROVIDER_LABEL = get_env("LLM_PROVIDER_LABEL", "ollama-local")
+LLM_SAFETY_PROFILE = get_env("LLM_SAFETY_PROFILE", "strict-v2")
+LLM_ADMIN_EMAIL = get_env("LLM_ADMIN_EMAIL", "admin@mindhelper.local")
+
+TELEGRAM_BOT_TOKEN = get_env("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_BOT_API_BASE_URL = get_env("TELEGRAM_BOT_API_BASE_URL", "https://api.telegram.org")
+TELEGRAM_BOT_TIMEOUT_SECONDS = float(get_env("TELEGRAM_BOT_TIMEOUT_SECONDS", "30"))
+TELEGRAM_BOT_POLL_TIMEOUT_SECONDS = int(get_env("TELEGRAM_BOT_POLL_TIMEOUT_SECONDS", "30"))
+
 CORS_ALLOWED_ORIGINS = get_csv_env(
     "CORS_ALLOWED_ORIGINS",
     "http://127.0.0.1:5173,http://localhost:5173",
@@ -123,3 +144,45 @@ CSRF_TRUSTED_ORIGINS = get_csv_env(
     "CSRF_TRUSTED_ORIGINS",
     "http://127.0.0.1:5173,http://localhost:5173",
 )
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "apps.chat": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.neural_engine": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.telegram_bot": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.directory": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

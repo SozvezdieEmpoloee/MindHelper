@@ -44,6 +44,36 @@ export interface ChatTurnResponse {
   chat_id: string;
 }
 
+export interface SpecialistLocation {
+  id: string;
+  address_line: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  consultation_price: number | null;
+  currency: string;
+  is_active: boolean;
+}
+
+export interface Specialist {
+  id: string;
+  full_name: string;
+  profession: "psychologist" | "psychiatrist";
+  license_number: string;
+  is_verified: boolean;
+  rating_avg: string | null;
+  locations: SpecialistLocation[];
+}
+
+export interface EmergencyResource {
+  id: string;
+  region_code: string;
+  service_name: string;
+  contact_phone: string;
+  contact_url: string;
+  is_active: boolean;
+}
+
 export interface RegisterPayload {
   email: string;
   display_name: string;
@@ -193,4 +223,12 @@ export function sendChatMessage(contentText: string) {
     method: "POST",
     body: JSON.stringify({ content_text: contentText }),
   });
+}
+
+export function getSpecialists() {
+  return apiRequest<Specialist[]>("/api/v1/directory/specialists/");
+}
+
+export function getEmergencyResources() {
+  return apiRequest<EmergencyResource[]>("/api/v1/directory/emergency-resources/");
 }

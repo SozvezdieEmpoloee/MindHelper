@@ -82,6 +82,14 @@ class UserRoleAdmin(admin.ModelAdmin):
 
 @admin.register(ChannelAccount)
 class ChannelAccountAdmin(admin.ModelAdmin):
-    list_display = ("user", "channel_type", "external_user_id", "is_active", "linked_at")
+    list_display = (
+        "user",
+        "channel_type",
+        "external_user_id",
+        "external_chat_id",
+        "is_active",
+        "linked_at",
+    )
     list_filter = ("channel_type", "is_active")
-    search_fields = ("external_user_id", "external_chat_id", "user__email")
+    search_fields = ("external_user_id", "external_chat_id", "user__email", "user__display_name")
+    readonly_fields = ("linked_at",)

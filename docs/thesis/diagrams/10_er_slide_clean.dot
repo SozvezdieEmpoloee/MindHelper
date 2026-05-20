@@ -1,0 +1,87 @@
+digraph ERSlideClean {
+  graph [
+    rankdir=LR,
+    bgcolor="white",
+    splines=ortho,
+    nodesep=0.62,
+    ranksep=0.82,
+    dpi=180,
+    margin=0.03
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    fontname="Arial",
+    fontsize=18,
+    color="#334155",
+    fillcolor="#F8FAFC",
+    margin="0.13,0.07"
+  ];
+
+  edge [
+    color="#475569",
+    fontname="Arial",
+    fontsize=13,
+    fontcolor="#334155",
+    arrowsize=0.65,
+    penwidth=1.4
+  ];
+
+  // Main chain
+  user_account [fillcolor="#EAF3FF"];
+  user_chat [fillcolor="#EAF3FF"];
+  chat_message [fillcolor="#EAF3FF"];
+  crisis_event [fillcolor="#FFF4E6"];
+  safety_audit_log [fillcolor="#FFF4E6"];
+
+  user_account -> user_chat [label="1:1"];
+  user_chat -> chat_message [label="1:N"];
+  user_chat -> crisis_event [label="1:N"];
+  chat_message -> crisis_event [label="1:N"];
+  crisis_event -> safety_audit_log [label="1:N"];
+  chat_message -> safety_audit_log [label="1:N"];
+  user_chat -> safety_audit_log [label="1:N"];
+
+  // Identity branch
+  { rank=same; channel_account; role; user_role; }
+  user_account -> channel_account [label="1:N"];
+  user_account -> user_role [label="1:N"];
+  role -> user_role [label="1:N"];
+
+  // Model and resources
+  neural_model_version [fillcolor="#F3ECFF"];
+  emergency_resource;
+  neural_model_version -> user_chat [label="1:N"];
+  neural_model_version -> safety_audit_log [label="1:N"];
+  emergency_resource -> crisis_event [label="1:N"];
+
+  // Assessments
+  assessment_template [fillcolor="#EAFBF1"];
+  assessment_question [fillcolor="#EAFBF1"];
+  assessment_session [fillcolor="#EAFBF1"];
+  assessment_answer [fillcolor="#EAFBF1"];
+  assessment_template -> assessment_question [label="1:N"];
+  assessment_template -> assessment_session [label="1:N"];
+  user_account -> assessment_session [label="1:N"];
+  user_chat -> assessment_session [label="1:N"];
+  assessment_session -> assessment_answer [label="1:N"];
+  assessment_question -> assessment_answer [label="1:N"];
+
+  // Directory
+  specialist;
+  specialist_location;
+  appointment;
+  specialist -> specialist_location [label="1:N"];
+  user_account -> appointment [label="1:N"];
+  specialist -> appointment [label="1:N"];
+  specialist_location -> appointment [label="1:N"];
+
+  // Admin
+  moderation_case [fillcolor="#F3ECFF"];
+  site_content [fillcolor="#F3ECFF"];
+  user_account -> moderation_case [label="1:N"];
+  user_account -> site_content [label="1:N"];
+  user_chat -> moderation_case [label="1:N"];
+  chat_message -> moderation_case [label="1:N"];
+}

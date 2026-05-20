@@ -42,25 +42,19 @@ export function DashboardPage() {
       setError("");
 
       try {
-        const [statsResponse, chatResponse] = await Promise.all([
-          getDashboardStats(),
-          getChatMessages(),
-        ]);
-
+        const [statsResponse, chatResponse] = await Promise.all([getDashboardStats(), getChatMessages()]);
         if (cancelled) {
           return;
         }
-
         setStats(statsResponse);
         setMessages(chatResponse);
-      } catch (error) {
+      } catch (loadError) {
         if (cancelled) {
           return;
         }
-
-        const fallbackMessage =
-          error instanceof ApiError ? error.message : "Не удалось загрузить данные кабинета.";
-        setError(fallbackMessage);
+        setError(
+          loadError instanceof ApiError ? loadError.message : "Не удалось загрузить данные личного кабинета.",
+        );
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -100,9 +94,7 @@ export function DashboardPage() {
               На главную
             </button>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Личный кабинет
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Личный кабинет</p>
               <h1 className="text-lg font-bold text-slate-900">{user.display_name}</h1>
             </div>
           </div>
@@ -119,13 +111,11 @@ export function DashboardPage() {
 
       <main className="mx-auto max-w-6xl px-6 py-10">
         <section className="rounded-[32px] bg-slate-950 px-8 py-10 text-white shadow-2xl shadow-slate-300/40">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-300">
-            Сводка пользователя
-          </p>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-300">Ваша сводка</p>
           <h2 className="mt-4 text-4xl font-black">Здравствуйте, {user.display_name}</h2>
           <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-300">
-            Здесь мы показываем реальные данные из backend: число сообщений, активность чата,
-            статистику по опросникам и ближайшие записи.
+            Здесь собрана ваша личная история общения: последние сообщения, активность в чате и
+            важные точки взаимодействия с сервисом.
           </p>
         </section>
 
@@ -139,27 +129,27 @@ export function DashboardPage() {
           <StatCard
             title="Всего сообщений"
             value={loading ? "..." : String(stats?.total_messages ?? 0)}
-            hint="Все сообщения из личного чата"
+            hint="Количество сообщений в вашем личном диалоге"
           />
           <StatCard
             title="Опросники"
             value={loading ? "..." : String(stats?.assessment_sessions ?? 0)}
-            hint="Количество сохранённых сессий"
+            hint="Сохранённые сессии самооценки"
           />
           <StatCard
             title="Последняя активность"
             value={loading ? "..." : formatDate(stats?.last_message_at ?? null)}
-            hint="По истории сообщений"
+            hint="Когда вы в последний раз возвращались в чат"
           />
           <StatCard
             title="Ближайшая запись"
-            value={loading ? "..." : stats?.next_appointment ? "Запланирована" : "Нет"}
+            value={loading ? "..." : stats?.next_appointment ? "Запланирована" : "Пока нет"}
             hint={
               loading
                 ? "Загружаем данные..."
                 : stats?.next_appointment
                   ? formatDate(stats.next_appointment.start_at)
-                  : "Пока нет записи к специалисту"
+                  : "Вы ещё не записывались к специалисту"
             }
           />
         </section>
@@ -168,9 +158,7 @@ export function DashboardPage() {
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-                  История чата
-                </p>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">История чата</p>
                 <h3 className="mt-2 text-2xl font-bold text-slate-950">Последние сообщения</h3>
               </div>
               <button
@@ -202,7 +190,7 @@ export function DashboardPage() {
                     }`}
                   >
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-75">
-                      {message.sender_role === "user" ? "Вы" : "Сервис"}
+                      {message.sender_role === "user" ? "Вы" : "MindSupport"}
                     </p>
                     <p className="mt-2 text-sm leading-relaxed">{message.content_text}</p>
                   </div>
@@ -213,9 +201,7 @@ export function DashboardPage() {
 
           <article className="space-y-6">
             <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-                Профиль
-              </p>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">Профиль</p>
               <h3 className="mt-2 text-2xl font-bold text-slate-950">Данные аккаунта</h3>
               <div className="mt-6 space-y-4">
                 <ProfileRow label="Имя" value={user.display_name} />
@@ -226,13 +212,11 @@ export function DashboardPage() {
             </div>
 
             <div className="rounded-[32px] bg-gradient-to-br from-sky-500 to-indigo-600 p-6 text-white shadow-2xl shadow-sky-200">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-100">
-                Что дальше
-              </p>
-              <h3 className="mt-2 text-2xl font-bold">Основа кабинета готова</h3>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-100">Что можно дальше</p>
+              <h3 className="mt-2 text-2xl font-bold">Продолжить диалог или перейти к очной помощи</h3>
               <p className="mt-4 text-sm leading-relaxed text-sky-100">
-                Следующим шагом можно подключить прохождение опросников, страницу записей к
-                специалистам и реальные графики пользовательской активности.
+                Личный кабинет помогает вернуться к разговору позже, посмотреть последние сообщения и
+                постепенно перейти к поиску специалиста, если это станет важным следующим шагом.
               </p>
             </div>
           </article>
@@ -242,15 +226,7 @@ export function DashboardPage() {
   );
 }
 
-function StatCard({
-  title,
-  value,
-  hint,
-}: {
-  title: string;
-  value: string;
-  hint: string;
-}) {
+function StatCard({ title, value, hint }: { title: string; value: string; hint: string }) {
   return (
     <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
       <p className="text-sm font-semibold text-slate-500">{title}</p>

@@ -82,6 +82,7 @@ class ChannelAccount(models.Model):
     channel_type = models.CharField(max_length=32, choices=ChannelType.choices)
     external_user_id = models.CharField(max_length=255)
     external_chat_id = models.CharField(max_length=255, blank=True, null=True)
+    bot_message_log = models.JSONField(default=list, blank=True)
     linked_at = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
 
@@ -93,4 +94,3 @@ class ChannelAccount(models.Model):
                 name="uq_channel_external_user",
             ),
         ]
-

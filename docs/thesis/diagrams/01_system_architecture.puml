@@ -1,0 +1,36 @@
+@startuml
+title Общая архитектура сервиса MindHelper
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName "Times New Roman"
+
+actor "Пользователь" as User
+actor "Администратор" as Admin
+
+component "Web-интерфейс\nReact / Vite" as Web #DBEAFE
+component "Telegram-бот\nlong polling" as Tg #DBEAFE
+component "Django REST API" as Api #DCFCE7
+component "Chat service\ncreate_chat_turn()" as Chat #DCFCE7
+component "Safety-контур\npolicy + routing + audit" as Safety #FEF3C7
+component "Neural engine\nprompt-policy + Ollama client" as Neural #FCE7F3
+component "Ollama\nQwen3" as Ollama #FCE7F3
+database "PostgreSQL\nUUID + связи + аудит" as Db #E0F2FE
+component "Django Admin\nмодель, справочники, аудит" as DjangoAdmin #EDE9FE
+
+User --> Web
+User --> Tg
+Web --> Api
+Tg --> Api
+Api --> Chat
+Chat --> Safety
+Safety --> Neural : low / elevated
+Safety --> Chat : high / critical
+Neural --> Ollama
+Chat --> Db
+Api --> Db
+Admin --> DjangoAdmin
+DjangoAdmin --> Db
+DjangoAdmin --> Neural
+@enduml

@@ -1,0 +1,53 @@
+
+digraph ER {
+  graph [rankdir=LR, bgcolor="white", splines=ortho, nodesep=0.55, ranksep=0.9, dpi=170];
+  node [shape=record, fontname="Arial", fontsize=10, style="rounded,filled", fillcolor="#F8FAFC", color="#334155"];
+  edge [fontname="Arial", fontsize=9, color="#475569", arrowsize=0.7];
+
+  user_account [label="{user_account|PK id: uuid\l email\l password_hash\l display_name\l status\l is_staff\l}"];
+  role [label="{role|PK id: uuid\l code\l name\l}"];
+  user_role [label="{user_role|PK id: uuid\l FK user_id\l FK role_id\l assigned_at\l}"];
+  channel_account [label="{channel_account|PK id: uuid\l FK user_id\l channel_type\l external_user_id\l external_chat_id\l}"];
+  user_chat [label="{user_chat|PK id: uuid\l FK user_id\l FK model_version_id\l status\l created_at\l updated_at\l}", fillcolor="#EAF3FF"];
+  chat_message [label="{chat_message|PK id: uuid\l FK chat_id\l sender_role\l content_text\l risk_score\l created_at\l}", fillcolor="#EAF3FF"];
+  crisis_event [label="{crisis_event|PK id: uuid\l FK chat_id\l FK trigger_message_id\l FK emergency_resource_id\l risk_level\l status\l screening_status\l}", fillcolor="#FFF4E6"];
+  emergency_resource [label="{emergency_resource|PK id: uuid\l region_code\l service_name\l contact_phone\l contact_url\l is_active\l}", fillcolor="#F7F7F7"];
+  assessment_template [label="{assessment_template|PK id: uuid\l code\l title\l is_active\l}", fillcolor="#EAFBF1"];
+  assessment_question [label="{assessment_question|PK id: uuid\l FK template_id\l question_text\l response_format\l order_index\l}", fillcolor="#EAFBF1"];
+  assessment_session [label="{assessment_session|PK id: uuid\l FK user_id\l FK chat_id\l FK template_id\l status\l total_score\l}", fillcolor="#EAFBF1"];
+  assessment_answer [label="{assessment_answer|PK id: uuid\l FK session_id\l FK question_id\l answer_value\l answer_text\l}", fillcolor="#EAFBF1"];
+  specialist [label="{specialist|PK id: uuid\l full_name\l profession\l license_number\l is_verified\l rating_avg\l}"];
+  specialist_location [label="{specialist_location|PK id: uuid\l FK specialist_id\l address_line\l city\l latitude\l longitude\l price\l}"];
+  appointment [label="{appointment|PK id: uuid\l FK user_id\l FK specialist_id\l FK location_id\l start_at\l status\l}"];
+  neural_model_version [label="{neural_model_version|PK id: uuid\l version_tag\l model_name\l provider\l safety_profile\l is_active\l}", fillcolor="#F3ECFF"];
+  safety_audit_log [label="{safety_audit_log|PK id: uuid\l FK chat_id\l FK message_id\l FK crisis_event_id\l risk_level\l route_code\l escalation_action\l}", fillcolor="#FFF4E6"];
+  moderation_case [label="{moderation_case|PK id: uuid\l FK chat_id\l FK message_id\l reason\l status\l}"];
+  site_content [label="{site_content|PK id: uuid\l content_type\l slug\l title\l body\l is_published\l}"];
+
+  user_account -> user_role [label="1:N"];
+  role -> user_role [label="1:N"];
+  user_account -> channel_account [label="1:N"];
+  user_account -> user_chat [label="1:1"];
+  neural_model_version -> user_chat [label="1:N"];
+  user_chat -> chat_message [label="1:N"];
+  user_chat -> crisis_event [label="1:N"];
+  chat_message -> crisis_event [label="1:N"];
+  emergency_resource -> crisis_event [label="1:N"];
+  assessment_template -> assessment_question [label="1:N"];
+  assessment_template -> assessment_session [label="1:N"];
+  user_account -> assessment_session [label="1:N"];
+  user_chat -> assessment_session [label="1:N"];
+  assessment_session -> assessment_answer [label="1:N"];
+  assessment_question -> assessment_answer [label="1:N"];
+  specialist -> specialist_location [label="1:N"];
+  user_account -> appointment [label="1:N"];
+  specialist -> appointment [label="1:N"];
+  specialist_location -> appointment [label="1:N"];
+  user_chat -> safety_audit_log [label="1:N"];
+  chat_message -> safety_audit_log [label="1:N"];
+  crisis_event -> safety_audit_log [label="1:N"];
+  neural_model_version -> safety_audit_log [label="1:N"];
+  user_chat -> moderation_case [label="1:N"];
+  chat_message -> moderation_case [label="1:N"];
+  user_account -> site_content [label="1:N"];
+}

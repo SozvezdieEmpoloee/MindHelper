@@ -1,0 +1,34 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <div id="content-main">
+    <h1>Ollama Control</h1>
+    <p>
+      Pull a model from Ollama and activate a matching version in <code>neural_model_version</code>.
+    </p>
+
+    {% if ollama_error %}
+      <p style="color: #b91c1c;"><strong>Ollama status error:</strong> {{ ollama_error }}</p>
+    {% endif %}
+
+    <form method="post" style="max-width: 720px;">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div style="display: flex; gap: 12px;">
+        <button type="submit" class="button default">Pull and activate</button>
+        <a href="{{ changelist_url }}" class="button">Back to model versions</a>
+      </div>
+    </form>
+
+    <h2 style="margin-top: 24px;">Detected local Ollama models</h2>
+    {% if ollama_models %}
+      <ul>
+        {% for model in ollama_models %}
+          <li><code>{{ model.name }}</code></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No models were returned by Ollama.</p>
+    {% endif %}
+  </div>
+{% endblock %}

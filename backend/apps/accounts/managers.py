@@ -8,7 +8,7 @@ class UserAccountManager(BaseUserManager):
         if not email:
             raise ValueError("The email field must be set.")
 
-        email = self.normalize_email(email)
+        email = self.normalize_email(email).lower()
         user = self.model(email=email, **extra_fields)
 
         if password:
@@ -36,4 +36,3 @@ class UserAccountManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
 
         return self._create_user(email, password, **extra_fields)
-

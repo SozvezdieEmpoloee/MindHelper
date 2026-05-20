@@ -7,7 +7,8 @@ from .services import create_appointment
 
 
 class SpecialistListAPIView(generics.ListAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.AllowAny,)
+    pagination_class = None
     serializer_class = SpecialistSerializer
 
     def get_queryset(self):
@@ -15,7 +16,8 @@ class SpecialistListAPIView(generics.ListAPIView):
 
 
 class EmergencyResourceListAPIView(generics.ListAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.AllowAny,)
+    pagination_class = None
     serializer_class = EmergencyResourceSerializer
 
     def get_queryset(self):
@@ -40,4 +42,3 @@ class AppointmentListCreateAPIView(generics.ListCreateAPIView):
             end_at=serializer.validated_data["end_at"],
         )
         serializer.instance = appointment
-

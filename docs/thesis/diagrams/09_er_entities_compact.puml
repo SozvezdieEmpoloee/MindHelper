@@ -1,0 +1,96 @@
+@startuml
+title MindHelper: compact ER model
+
+hide methods
+hide stereotypes
+skinparam linetype polyline
+skinparam packageStyle rectangle
+skinparam roundcorner 12
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam defaultFontName "Arial"
+skinparam nodesep 42
+skinparam ranksep 54
+skinparam ArrowFontSize 11
+skinparam ArrowFontColor #334155
+
+skinparam rectangle {
+  BorderColor #334155
+  FontColor #0F172A
+  BackgroundColor #F8FAFC
+}
+
+skinparam package {
+  BorderColor #CBD5E1
+  FontColor #334155
+  BackgroundColor #FFFFFF
+}
+
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1
+
+left to right direction
+
+rectangle "user_account" as user #EAF3FF
+
+rectangle "channel_account" as channel #EAF3FF
+rectangle "role" as role #F8FAFC
+rectangle "user_role" as user_role #F8FAFC
+
+rectangle "user_chat" as chat #EAF3FF
+rectangle "chat_message" as message #EAF3FF
+
+rectangle "neural_model_version" as model #F3ECFF
+
+rectangle "crisis_event" as crisis #FFF4E6
+rectangle "safety_audit_log" as audit #FFF4E6
+rectangle "emergency_resource" as resource #F8FAFC
+
+rectangle "assessment_template" as atemplate #EAFBF1
+rectangle "assessment_question" as aquestion #EAFBF1
+rectangle "assessment_session" as asession #EAFBF1
+rectangle "assessment_answer" as aanswer #EAFBF1
+
+rectangle "specialist" as specialist #F8FAFC
+rectangle "specialist_location" as location #F8FAFC
+rectangle "appointment" as appointment #F8FAFC
+
+rectangle "moderation_case" as moderation #F3ECFF
+rectangle "site_content" as content #F3ECFF
+
+user -right-> channel : "1:N"
+user -down-> user_role : "1:N"
+role -right-> user_role : "1:N"
+
+user -right-> chat : "1:1"
+chat -right-> message : "1:N"
+model -up-> chat : "1:N"
+
+chat -right-> crisis : "1:N"
+message -down-> crisis : "1:N"
+resource -right-> crisis : "1:N"
+
+chat -right-> audit : "1:N"
+message -right-> audit : "1:N"
+crisis -right-> audit : "1:N"
+model -right-> audit : "1:N"
+
+atemplate -right-> aquestion : "1:N"
+atemplate -down-> asession : "1:N"
+user -down-> asession : "1:N"
+chat -down-> asession : "1:N"
+asession -right-> aanswer : "1:N"
+aquestion -up-> aanswer : "1:N"
+
+specialist -right-> location : "1:N"
+user -down-> appointment : "1:N"
+specialist -right-> appointment : "1:N"
+location -right-> appointment : "1:N"
+
+user -down-> model : "1:N"
+user -down-> moderation : "1:N"
+user -down-> content : "1:N"
+chat -down-> moderation : "1:N"
+message -down-> moderation : "1:N"
+
+@enduml

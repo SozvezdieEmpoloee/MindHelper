@@ -36,3 +36,20 @@ def test_high_risk_message_creates_crisis_event(regular_user):
     payload = response.json()
     assert payload["crisis_event"] is not None
     assert payload["crisis_event"]["risk_level"] == "critical"
+
+
+def test_suicidal_ideation_starts_screening_flow(regular_user):
+    client = APIClient()
+    client.force_authenticate(user=regular_user)
+
+    response = client.post(
+        "/api/v1/chat/messages/",
+        {"content_text": "У меня бывают мысли о самоубийстве."},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["crisis_event"] is not None
+    assert payload["crisis_event"]["risk_level"] == "high"
+    assert "ответьте коротко" in payload["bot_message"]["content_text"].lower()

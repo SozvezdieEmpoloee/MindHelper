@@ -48,13 +48,13 @@ class LoginAPIView(views.APIView):
 
         if user is None:
             return response.Response(
-                {"detail": "Invalid email or password."},
+                {"detail": "Неверный email или пароль."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not user.is_active:
             return response.Response(
-                {"detail": "This account is inactive."},
+                {"detail": "Этот аккаунт недоступен."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

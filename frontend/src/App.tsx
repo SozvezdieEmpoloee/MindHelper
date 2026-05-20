@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthModal } from "./components/AuthModal";
 import { MapSection } from "./components/MapSection";
@@ -14,42 +14,42 @@ interface UiChatMessage {
 }
 
 const QUICK_REPLIES = [
-  "Чувствую сильную тревогу",
-  "Мне сложно справляться со стрессом",
-  "Хочу понять, что со мной происходит",
-  "Нужна поддержка прямо сейчас",
+  "Мне тревожно и трудно успокоиться",
+  "Я чувствую сильную усталость и напряжение",
+  "Хочу разобраться в своём состоянии",
+  "Мне нужна поддержка прямо сейчас",
 ];
 
-const FEATURE_CARDS = [
+const SERVICE_FEATURES = [
   {
-    title: "Живой диалог",
-    text: "История сообщений сохраняется в личном кабинете и доступна после входа в аккаунт.",
+    title: "Бережный диалог",
+    text: "Можно начать с короткого сообщения и постепенно рассказать о том, что беспокоит именно сейчас.",
   },
   {
-    title: "Безопасность",
-    text: "При высоком риске система отмечает кризисный случай и предлагает экстренные ресурсы помощи.",
+    title: "Понятные ориентиры",
+    text: "Сервис помогает структурировать переживания и подсказывает, когда лучше обратиться за очной помощью.",
   },
   {
-    title: "Статистика",
-    text: "В кабинете пользователь видит число сообщений, пройденные опросники и ближайшие записи.",
+    title: "Контакты рядом",
+    text: "На сайте доступны экстренные номера и список специалистов в Воронеже с адресами и точками на карте.",
   },
 ];
 
-const HOW_IT_WORKS = [
+const USER_STEPS = [
   {
     step: "01",
-    title: "Пользователь входит в сервис",
-    text: "Регистрация нужна, чтобы хранить историю чата, статистику и результаты диагностических сценариев.",
+    title: "Опишите, что с вами происходит",
+    text: "Вы можете написать своими словами о тревоге, усталости, напряжении, страхе или растерянности.",
   },
   {
     step: "02",
-    title: "Начинается диалог",
-    text: "Сообщения отправляются в backend, сохраняются в PostgreSQL и возвращаются на экран вместе с ответом системы.",
+    title: "Получите спокойный ответ",
+    text: "Сервис отвечает простым языком и помогает сфокусироваться на текущем состоянии без давления и осуждения.",
   },
   {
     step: "03",
-    title: "Сервис отслеживает риск",
-    text: "Если текст похож на кризисный, backend фиксирует событие и выводит рекомендации по экстренной помощи.",
+    title: "При необходимости перейдите к следующему шагу",
+    text: "Если нужно, вы сможете продолжить диалог, сохранить историю в кабинете и найти очного специалиста.",
   },
 ];
 
@@ -59,11 +59,7 @@ const INITIAL_MESSAGE: UiChatMessage = {
   text: "Здравствуйте. Я рядом и готов выслушать. Расскажите, пожалуйста, что вы чувствуете сейчас.",
 };
 
-function normalizeMessages(messages: Array<{
-  id: string;
-  sender_role: ChatSender;
-  content_text: string;
-}>): UiChatMessage[] {
+function normalizeMessages(messages: Array<{ id: string; sender_role: ChatSender; content_text: string }>) {
   return messages.map((message) => ({
     id: message.id,
     sender: message.sender_role,
@@ -108,17 +104,13 @@ export function App() {
         if (cancelled) {
           return;
         }
-
         const normalized = normalizeMessages(response);
         setMessages(normalized.length > 0 ? normalized : [INITIAL_MESSAGE]);
       } catch (error) {
         if (cancelled) {
           return;
         }
-
-        const fallbackMessage =
-          error instanceof ApiError ? error.message : "Не удалось загрузить историю сообщений.";
-        setChatError(fallbackMessage);
+        setChatError(error instanceof ApiError ? error.message : "Не удалось загрузить историю диалога.");
         setMessages([INITIAL_MESSAGE]);
       } finally {
         if (!cancelled) {
@@ -156,20 +148,18 @@ export function App() {
     setChatSending(true);
     setChatError("");
 
-    try {
-      const response = await sendChatMessage(content);
-      const nextMessages = normalizeMessages([response.user_message, response.bot_message]);
-      setMessages((current) => {
-        const preservedMessages = current[0]?.id === INITIAL_MESSAGE.id ? [INITIAL_MESSAGE] : current;
-        return [...preservedMessages, ...nextMessages];
-      });
-      setCrisisEvent(response.crisis_event);
-      setInputValue("");
-      setChatOpen(true);
+      try {
+        const response = await sendChatMessage(content);
+        const nextMessages = normalizeMessages([response.user_message, response.bot_message]);
+        setMessages((current) => {
+          const existing = current[0]?.id === INITIAL_MESSAGE.id ? current.slice(1) : current;
+          return [...existing, ...nextMessages];
+        });
+        setCrisisEvent(response.crisis_event);
+        setInputValue("");
+        setChatOpen(true);
     } catch (error) {
-      const fallbackMessage =
-        error instanceof ApiError ? error.message : "Не удалось отправить сообщение.";
-      setChatError(fallbackMessage);
+      setChatError(error instanceof ApiError ? error.message : "Не удалось отправить сообщение.");
     } finally {
       setChatSending(false);
     }
@@ -184,11 +174,7 @@ export function App() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(103,232,249,0.16),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(129,140,248,0.12),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#ffffff_48%,_#eef6ff_100%)] text-slate-900">
       <header className="sticky top-0 z-40 border-b border-white/60 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="flex items-center gap-3 text-left"
-          >
+          <button type="button" onClick={() => navigate("/")} className="flex items-center gap-3 text-left">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 text-white shadow-lg shadow-cyan-200">
               <BrainIcon />
             </div>
@@ -204,11 +190,11 @@ export function App() {
             <a href="#about" className="transition hover:text-sky-600">
               О сервисе
             </a>
-            <a href="#workflow" className="transition hover:text-sky-600">
-              Как это работает
-            </a>
             <a href="#support-chat" className="transition hover:text-sky-600">
               Чат
+            </a>
+            <a href="#help-route" className="transition hover:text-sky-600">
+              Как это помогает
             </a>
             <a href="#clinics" className="transition hover:text-sky-600">
               Специалисты
@@ -257,7 +243,7 @@ export function App() {
 
       <main>
         <section className="relative overflow-hidden px-6 pb-20 pt-16" id="about">
-          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
             <div className="space-y-7">
               <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -266,12 +252,13 @@ export function App() {
 
               <div className="space-y-4">
                 <h1 className="max-w-3xl text-4xl font-black leading-tight text-slate-950 md:text-6xl">
-                  Веб-сервис предварительной психологической диагностики и поддержки.
+                  Пространство, где можно спокойно рассказать о своём состоянии и получить опору.
                 </h1>
                 <p className="max-w-2xl text-lg leading-relaxed text-slate-600">
-                  Мы уже связали frontend с Django backend: регистрация, логин, история сообщений
-                  и диалоговый чат теперь работают через реальную базу данных и сессионную
-                  авторизацию.
+                  MindSupport помогает начать разговор о тревоге, стрессе, подавленности и
+                  внутреннем напряжении. Здесь можно написать о своих переживаниях, сохранить
+                  историю диалога и при необходимости быстро перейти к экстренным контактам и
+                  очной помощи.
                 </p>
               </div>
 
@@ -296,7 +283,7 @@ export function App() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-3">
-                {FEATURE_CARDS.map((card) => (
+                {SERVICE_FEATURES.map((card) => (
                   <article
                     key={card.title}
                     className="rounded-[24px] border border-white/70 bg-white/80 p-5 shadow-lg shadow-slate-200/50 backdrop-blur"
@@ -312,35 +299,34 @@ export function App() {
               <div className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-2xl shadow-sky-100">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-slate-400">Текущий статус</p>
+                    <p className="text-sm font-semibold text-slate-400">Ваш статус</p>
                     <p className="text-2xl font-bold text-slate-900">
-                      {user ? "Аккаунт подключён" : "Гость"}
+                      {user ? "Личный кабинет активен" : "Гостевой просмотр"}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-                    Backend online
+                    Онлайн
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <InfoRow label="Авторизация" value={user ? "Сессия активна" : "Требуется вход"} />
+                  <InfoRow label="Диалог" value={user ? "Можно продолжить общение" : "Доступен после входа"} />
                   <InfoRow
-                    label="История чата"
-                    value={user ? `${Math.max(messages.length - 1, 0)} сообщений` : "Появится после входа"}
+                    label="История сообщений"
+                    value={user ? `${Math.max(messages.length - 1, 0)} сохранено` : "Появится в вашем кабинете"}
                   />
                   <InfoRow
-                    label="Кризисный контроль"
-                    value={crisisEvent ? "Сработал флаг риска" : "Наблюдение активно"}
+                    label="Экстренные контакты"
+                    value="Всегда доступны на сайте и в Telegram-боте"
                   />
                 </div>
 
                 <div className="mt-6 rounded-[28px] bg-slate-950 p-5 text-white">
-                  <p className="text-sm font-semibold text-sky-300">Что уже реализовано</p>
+                  <p className="text-sm font-semibold text-sky-300">Важно помнить</p>
                   <ul className="mt-4 space-y-3 text-sm text-slate-200">
-                    <li>Регистрация и вход через Django Session Auth</li>
-                    <li>Загрузка личной истории сообщений</li>
-                    <li>Сохранение новых сообщений в PostgreSQL</li>
-                    <li>Вывод предупреждения при кризисных сообщениях</li>
+                    <li>Сервис помогает начать разговор о состоянии и получить ориентиры для следующих шагов.</li>
+                    <li>Если ситуация кажется острой или опасной, лучше сразу воспользоваться экстренными контактами.</li>
+                    <li>Очная помощь специалиста особенно важна, если симптомы мешают сну, работе и повседневной жизни.</li>
                   </ul>
                 </div>
               </div>
@@ -348,15 +334,15 @@ export function App() {
           </div>
         </section>
 
-        <section className="px-6 py-20" id="workflow">
+        <section className="px-6 py-20" id="help-route">
           <div className="mx-auto max-w-6xl">
             <SectionHeading
-              eyebrow="Рабочий сценарий"
-              title="Как теперь работает сервис"
-              description="Этот блок уже соответствует текущему backend: session auth, chat API и личный кабинет."
+              eyebrow="Как это помогает"
+              title="Сервис помогает сделать первый шаг к поддержке"
+              description="Если трудно подобрать слова, можно начать с короткой фразы. Дальше диалог поможет спокойнее посмотреть на своё состояние и понять, что делать дальше."
             />
             <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {HOW_IT_WORKS.map((item) => (
+              {USER_STEPS.map((item) => (
                 <article
                   key={item.step}
                   className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/70"
@@ -376,10 +362,10 @@ export function App() {
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-300">
                 Чат поддержки
               </p>
-              <h2 className="mt-4 text-3xl font-bold">Один личный чат на пользователя</h2>
+              <h2 className="mt-4 text-3xl font-bold">Один личный диалог для спокойного и последовательного общения</h2>
               <p className="mt-4 text-sm leading-relaxed text-slate-300">
-                Мы сохранили логику из ER-диаграммы: у пользователя один чат, а весь диалог хранится
-                в сообщениях, связанных с этим чатом.
+                Вы можете возвращаться к разговору в удобное время. История помогает не начинать всё
+                заново и бережно сохраняет контекст ваших сообщений.
               </p>
 
               <div className="mt-8 grid gap-3">
@@ -417,11 +403,11 @@ export function App() {
               Следующий шаг
             </p>
             <h2 className="mt-4 text-3xl font-black md:text-4xl">
-              Базовый сценарий пользователя уже готов к дальнейшему развитию.
+              Если хочется продолжить разговор, сервис уже готов к диалогу на сайте и в Telegram.
             </h2>
             <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-sky-100">
-              Теперь можно спокойно расширять backend: опросники, запись к специалистам, Telegram
-              bot и более умную модель ответа, не ломая основу авторизации и диалога.
+              Вы можете общаться в личном кабинете, переходить к специалистам на карте и пользоваться
+              теми же экстренными контактами в Telegram-боте.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <button
@@ -448,8 +434,8 @@ export function App() {
 
       <footer className="border-t border-white/60 bg-white/70 px-6 py-8 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-          <p>MindSupport. Дипломный сервис предварительной психологической диагностики.</p>
-          <p>Frontend связан с Django, PostgreSQL и личным кабинетом пользователя.</p>
+          <p>MindSupport. Онлайн-сервис предварительной психологической поддержки и маршрутизации к помощи.</p>
+          <p>Если есть непосредственная угроза жизни или безопасности, лучше сразу обратиться в экстренные службы.</p>
         </div>
       </footer>
 
@@ -465,9 +451,9 @@ export function App() {
         <div className="fixed bottom-24 right-6 z-40 w-[22rem] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-300/60">
           <div className="flex items-center justify-between bg-slate-950 px-4 py-3 text-white">
             <div>
-              <p className="text-sm font-semibold">MindSupport Chat</p>
+              <p className="text-sm font-semibold">MindSupport</p>
               <p className="text-xs text-slate-300">
-                {user ? "История синхронизирована с аккаунтом" : "Для сохранения истории нужен вход"}
+                {user ? "История связана с вашим кабинетом" : "Войдите, чтобы сохранить историю диалога"}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -521,11 +507,11 @@ export function App() {
           <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[32px] bg-white shadow-2xl shadow-slate-950/20">
             <div className="flex items-center justify-between bg-slate-950 px-6 py-4 text-white">
               <div>
-                <p className="text-lg font-semibold">MindSupport Chat</p>
+                <p className="text-lg font-semibold">MindSupport</p>
                 <p className="text-sm text-slate-300">
                   {user
-                    ? "Сообщения сохраняются в вашем аккаунте."
-                    : "Войдите, чтобы история диалога сохранялась в базе данных."}
+                    ? "Вы продолжаете личный диалог в безопасном и спокойном формате."
+                    : "Войдите, чтобы сохранить историю общения и вернуться к ней позже."}
                 </p>
               </div>
               <button
@@ -589,7 +575,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
       <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-sm font-semibold text-slate-900">{value}</span>
+      <span className="text-right text-sm font-semibold text-slate-900">{value}</span>
     </div>
   );
 }
@@ -615,23 +601,42 @@ function ChatCard({
   crisisEvent: CrisisEvent | null;
   compact?: boolean;
 }) {
+  const messagesViewportRef = useRef<HTMLDivElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const viewport = messagesViewportRef.current;
+    const endMarker = messagesEndRef.current;
+    if (!viewport || !endMarker) {
+      return;
+    }
+
+    endMarker.scrollIntoView({
+      behavior: compact ? "auto" : "smooth",
+      block: "end",
+    });
+  }, [messages, loading, sending, compact]);
+
   return (
-    <div className={`overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl shadow-slate-200/60 ${compact ? "" : "flex h-full flex-col"}`}>
+    <div
+      className={`overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl shadow-slate-200/60 ${
+        compact ? "" : "flex h-full min-h-0 flex-col"
+      }`}
+    >
       <div className="border-b border-slate-200 px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
-              Реальный чат
-            </p>
-            <h3 className="mt-2 text-2xl font-bold text-slate-950">Диалог с backend</h3>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">Личный диалог</p>
+            <h3 className="mt-2 text-2xl font-bold text-slate-950">Чат поддержки</h3>
           </div>
           <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-            Session auth
+            Доступен сейчас
           </div>
         </div>
         {crisisEvent && (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Обнаружен кризисный риск. Backend зафиксировал событие и показал экстренный сценарий помощи.
+            В сообщении обнаружены признаки высокого риска. Пожалуйста, обратите внимание на
+            экстренные контакты и не оставайтесь с этим состоянием в одиночку.
           </div>
         )}
         {error && (
@@ -641,13 +646,18 @@ function ChatCard({
         )}
       </div>
 
-      <div className={`${compact ? "" : "flex flex-1 flex-col"}`}>
-        <div className={`space-y-4 overflow-y-auto bg-slate-50/80 p-6 ${compact ? "h-[24rem]" : "flex-1"}`}>
+      <div className={compact ? "" : "flex min-h-0 flex-1 flex-col"}>
+        <div
+          ref={messagesViewportRef}
+          className={`space-y-4 overflow-y-auto overscroll-contain bg-slate-50/80 p-6 ${
+            compact ? "h-[24rem]" : "min-h-0 flex-1"
+          }`}
+        >
           {loading ? (
             <div className="flex h-full items-center justify-center">
               <div className="inline-flex items-center gap-3 rounded-2xl bg-white px-5 py-3 text-sm font-medium text-slate-600 shadow">
-                <span className="h-4 w-4 rounded-full border-2 border-sky-200 border-t-sky-500 animate-spin" />
-                Загрузка истории сообщений...
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-sky-200 border-t-sky-500" />
+                Загружаем историю диалога...
               </div>
             </div>
           ) : (
@@ -662,7 +672,7 @@ function ChatCard({
                   </div>
                 )}
                 <div
-                  className={`max-w-[78%] rounded-[24px] px-4 py-3 text-sm leading-relaxed ${
+                  className={`min-w-0 max-w-[78%] whitespace-pre-wrap break-words rounded-[24px] px-4 py-3 text-sm leading-relaxed ${
                     message.sender === "user"
                       ? "rounded-br-md bg-gradient-to-r from-sky-500 to-indigo-500 text-white"
                       : "rounded-bl-md border border-slate-200 bg-white text-slate-700 shadow-sm"
@@ -673,6 +683,7 @@ function ChatCard({
               </div>
             ))
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="border-t border-slate-200 bg-white px-6 py-5">
@@ -716,23 +727,17 @@ function ChatCard({
   );
 }
 
-function MiniMessages({
-  messages,
-  loading,
-}: {
-  messages: UiChatMessage[];
-  loading: boolean;
-}) {
+function MiniMessages({ messages, loading }: { messages: UiChatMessage[]; loading: boolean }) {
   if (loading) {
-    return <p className="text-sm text-slate-500">Загрузка истории...</p>;
+    return <p className="text-sm text-slate-500">Загружаем историю...</p>;
   }
 
   return (
     <div className="space-y-3">
-      {messages.slice(-4).map((message) => (
+      {messages.map((message) => (
         <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
           <div
-            className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
+            className={`min-w-0 max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-xs leading-relaxed ${
               message.sender === "user"
                 ? "bg-gradient-to-r from-sky-500 to-indigo-500 text-white"
                 : "border border-slate-200 bg-white text-slate-700"

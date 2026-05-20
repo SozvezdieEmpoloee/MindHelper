@@ -1,0 +1,38 @@
+@startuml
+title Программная реализация MindHelper
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 5
+skinparam defaultFontName "Arial"
+skinparam monochrome true
+skinparam ArrowColor #111111
+skinparam ArrowFontColor #111111
+skinparam ArrowFontSize 14
+
+rectangle "Серверная часть" {
+  component "Django REST API" as Api
+  component "PostgreSQL" as Db
+  component "Safety-flow" as Safety
+  component "Ollama / Qwen3" as Ollama
+
+  Api --> Db : ORM
+  Api --> Safety : проверка риска
+  Safety --> Ollama : безопасный запрос
+  Ollama --> Safety : ответ модели
+}
+
+rectangle "Клиентская часть" {
+  rectangle "Веб-страница" {
+    component "React / Vite\nWeb-интерфейс" as Web
+  }
+
+  rectangle "Telegram-бот" {
+    component "python-telegram-bot\nLong polling" as Telegram
+  }
+}
+
+Web --> Api : использует REST API
+Telegram --> Api : отправляет сообщения
+
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+title Последовательность обработки пользовательского сообщения
+
+skinparam shadowing false
+skinparam defaultFontName "Times New Roman"
+
+actor "Пользователь" as User
+participant "Web / Telegram" as UI
+participant "Django API" as API
+participant "Chat service" as Chat
+participant "Safety router" as Safety
+participant "Ollama / Qwen3" as LLM
+database "PostgreSQL" as DB
+
+User -> UI : Ввод сообщения
+UI -> API : POST /api/v1/chat/messages/
+API -> Chat : create_chat_turn()
+Chat -> DB : save user message
+Chat -> Safety : assess_user_message()
+Safety --> Chat : risk_level + route decision
+
+alt low / elevated
+    Chat -> LLM : prompt + history + scenario
+    LLM --> Chat : generated reply
+    Chat -> Safety : apply_response_policy()
+else high / critical
+    Safety --> Chat : scripted safe response
+end
+
+Chat -> DB : save bot message
+Chat -> DB : create safety_audit_log
+Chat --> API : response payload
+API --> UI : JSON
+UI --> User : Ответ системы
+@enduml

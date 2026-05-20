@@ -7,6 +7,7 @@ from .models import Appointment, EmergencyResource, Specialist, SpecialistLocati
 class EmergencyResourceAdmin(admin.ModelAdmin):
     list_display = ("service_name", "region_code", "contact_phone", "is_active")
     list_filter = ("region_code", "is_active")
+    search_fields = ("service_name", "contact_phone")
 
 
 @admin.register(Specialist)
@@ -18,12 +19,13 @@ class SpecialistAdmin(admin.ModelAdmin):
 
 @admin.register(SpecialistLocation)
 class SpecialistLocationAdmin(admin.ModelAdmin):
-    list_display = ("specialist", "city", "consultation_price", "is_active")
+    list_display = ("specialist", "city", "address_line", "consultation_price", "is_active")
     list_filter = ("city", "is_active")
+    search_fields = ("specialist__full_name", "address_line", "city")
 
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
     list_display = ("user", "specialist", "status", "start_at", "end_at")
     list_filter = ("status",)
-
+    search_fields = ("user__email", "user__display_name", "specialist__full_name")

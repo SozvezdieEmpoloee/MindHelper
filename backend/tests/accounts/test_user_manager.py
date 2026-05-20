@@ -1,4 +1,5 @@
 import pytest
+from django.db import IntegrityError
 
 from apps.accounts.models import UserAccount
 
@@ -30,3 +31,17 @@ def test_create_superuser_sets_admin_flags():
     assert admin.is_superuser is True
     assert admin.is_active is True
 
+
+def test_create_user_blocks_duplicate_email_case_insensitively():
+    UserAccount.objects.create_user(
+        email="duplicate@example.com",
+        password="StrongPass123",
+        display_name="First User",
+    )
+
+    with pytest.raises(IntegrityError):
+        UserAccount.objects.create_user(
+            email="DUPLICATE@example.com",
+            password="StrongPass123",
+            display_name="Second User",
+        )

@@ -1,5 +1,6 @@
--- MindSupport PostgreSQL schema
--- PostgreSQL 14+ (tested syntax for PostgreSQL 18)
+-- MindHelper PostgreSQL schema
+-- Updated to match current Django models and migrations.
+-- PostgreSQL 14+.
 
 BEGIN;
 
@@ -7,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS user_account (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    email varchar(255) NOT NULL UNIQUE,
+    email varchar(254) NOT NULL UNIQUE,
     password_hash varchar(255) NOT NULL,
     display_name varchar(120) NOT NULL,
     status varchar(32) NOT NULL DEFAULT 'active'
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS channel_account (
         CHECK (channel_type IN ('web', 'telegram')),
     external_user_id varchar(255) NOT NULL,
     external_chat_id varchar(255),
+    bot_message_log jsonb NOT NULL DEFAULT '[]'::jsonb,
     linked_at timestamptz NOT NULL DEFAULT now(),
     is_active boolean NOT NULL DEFAULT true,
     CONSTRAINT uq_channel_external_user UNIQUE (channel_type, external_user_id)
@@ -84,8 +86,8 @@ CREATE TABLE IF NOT EXISTS emergency_resource (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     region_code varchar(16) NOT NULL,
     service_name varchar(255) NOT NULL,
-    contact_phone varchar(64),
-    contact_url varchar(512),
+    contact_phone varchar(64) NOT NULL DEFAULT '',
+    contact_url varchar(512) NOT NULL DEFAULT '',
     is_active boolean NOT NULL DEFAULT true
 );
 
@@ -95,10 +97,15 @@ CREATE TABLE IF NOT EXISTS crisis_event (
     trigger_message_id uuid REFERENCES chat_message(id) ON DELETE SET NULL,
     emergency_resource_id uuid REFERENCES emergency_resource(id) ON DELETE SET NULL,
     risk_level varchar(16) NOT NULL
-        CHECK (risk_level IN ('low', 'medium', 'high', 'critical')),
+        CHECK (risk_level IN ('low', 'elevated', 'high', 'critical')),
     status varchar(32) NOT NULL
         CHECK (status IN ('open', 'resolved', 'dismissed')),
-    action_note text,
+    screening_status varchar(24) NOT NULL DEFAULT 'not_required'
+        CHECK (screening_status IN ('not_required', 'pending', 'completed')),
+    screening_question_index smallint NOT NULL DEFAULT 0
+        CHECK (screening_question_index >= 0),
+    screening_answers jsonb NOT NULL DEFAULT '[]'::jsonb,
+    action_note text NOT NULL DEFAULT '',
     detected_at timestamptz NOT NULL DEFAULT now(),
     resolved_at timestamptz
 );
@@ -130,7 +137,7 @@ CREATE TABLE IF NOT EXISTS assessment_session (
     status varchar(32) NOT NULL
         CHECK (status IN ('started', 'completed', 'cancelled')),
     total_score numeric(10,4),
-    severity_level varchar(32),
+    severity_level varchar(32) NOT NULL DEFAULT '',
     started_at timestamptz NOT NULL DEFAULT now(),
     completed_at timestamptz
 );
@@ -140,7 +147,7 @@ CREATE TABLE IF NOT EXISTS assessment_answer (
     session_id uuid NOT NULL REFERENCES assessment_session(id) ON DELETE CASCADE,
     question_id uuid NOT NULL REFERENCES assessment_question(id) ON DELETE RESTRICT,
     answer_value numeric(10,4),
-    answer_text text,
+    answer_text text NOT NULL DEFAULT '',
     answered_at timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT uq_session_question UNIQUE (session_id, question_id)
 );
@@ -150,7 +157,7 @@ CREATE TABLE IF NOT EXISTS specialist (
     full_name varchar(255) NOT NULL,
     profession varchar(32) NOT NULL
         CHECK (profession IN ('psychologist', 'psychiatrist')),
-    license_number varchar(64),
+    license_number varchar(64) NOT NULL DEFAULT '',
     is_verified boolean NOT NULL DEFAULT false,
     rating_avg numeric(3,2)
         CHECK (rating_avg IS NULL OR (rating_avg >= 0 AND rating_avg <= 5))
@@ -164,7 +171,7 @@ CREATE TABLE IF NOT EXISTS specialist_location (
     latitude numeric(9,6) NOT NULL,
     longitude numeric(9,6) NOT NULL,
     consultation_price numeric(10,2),
-    currency char(3) NOT NULL DEFAULT 'RUB',
+    currency varchar(3) NOT NULL DEFAULT 'RUB',
     is_active boolean NOT NULL DEFAULT true
 );
 
@@ -205,6 +212,47 @@ CREATE TABLE IF NOT EXISTS site_content (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS safety_audit_log (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    chat_id uuid NOT NULL REFERENCES user_chat(id) ON DELETE CASCADE,
+    message_id uuid REFERENCES chat_message(id) ON DELETE SET NULL,
+    crisis_event_id uuid REFERENCES crisis_event(id) ON DELETE SET NULL,
+    model_version_id uuid REFERENCES neural_model_version(id) ON DELETE SET NULL,
+    risk_level varchar(16) NOT NULL
+        CHECK (risk_level IN ('low', 'elevated', 'high', 'critical')),
+    route_code varchar(64) NOT NULL
+        CHECK (
+            route_code IN (
+                'low_support',
+                'elevated_support',
+                'immediate_emergency',
+                'start_screening',
+                'repeat_screening',
+                'screening_next_question',
+                'screening_negative',
+                'screening_high',
+                'screening_critical'
+            )
+        ),
+    escalation_action varchar(64) NOT NULL
+        CHECK (
+            escalation_action IN (
+                'none',
+                'offer_specialist',
+                'start_asq',
+                'urgent_specialist',
+                'emergency_contacts'
+            )
+        ),
+    human_review_flag boolean NOT NULL DEFAULT false,
+    generated_with_model boolean NOT NULL DEFAULT false,
+    policy_intervened boolean NOT NULL DEFAULT false,
+    model_provider varchar(64) NOT NULL DEFAULT '',
+    matched_rules jsonb NOT NULL DEFAULT '[]'::jsonb,
+    action_note text NOT NULL DEFAULT '',
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS ix_user_role_user_id ON user_role(user_id);
 CREATE INDEX IF NOT EXISTS ix_channel_account_user_id ON channel_account(user_id);
 CREATE INDEX IF NOT EXISTS ix_user_chat_model_version_id ON user_chat(model_version_id);
@@ -217,5 +265,9 @@ CREATE INDEX IF NOT EXISTS ix_specialist_location_specialist_id ON specialist_lo
 CREATE INDEX IF NOT EXISTS ix_appointment_user_id ON appointment(user_id);
 CREATE INDEX IF NOT EXISTS ix_moderation_case_chat_id ON moderation_case(chat_id);
 CREATE INDEX IF NOT EXISTS ix_site_content_type_published ON site_content(content_type, is_published);
+CREATE INDEX IF NOT EXISTS ix_safety_audit_log_chat_id ON safety_audit_log(chat_id);
+CREATE INDEX IF NOT EXISTS ix_safety_audit_log_message_id ON safety_audit_log(message_id);
+CREATE INDEX IF NOT EXISTS ix_safety_audit_log_crisis_event_id ON safety_audit_log(crisis_event_id);
+CREATE INDEX IF NOT EXISTS ix_safety_audit_log_model_version_id ON safety_audit_log(model_version_id);
 
 COMMIT;

@@ -37,7 +37,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO neural_model_version (id, version_tag, model_name, provider, safety_profile, is_active, deployed_at, created_by_admin_user_id)
 VALUES
     ('00000000-0000-0000-0000-000000000101', 'v0.9.0', 'MindSupport-RU', 'local', 'strict-v1', false, now() - interval '20 days', '00000000-0000-0000-0000-000000000001'),
-    ('00000000-0000-0000-0000-000000000102', 'v1.0.0', 'MindSupport-RU', 'local', 'strict-v2', true, now() - interval '3 days', '00000000-0000-0000-0000-000000000001')
+    ('00000000-0000-0000-0000-000000000102', 'ollama-qwen3-8b-local', 'Qwen3-8B', 'ollama-local', 'strict-v2', true, now() - interval '3 days', '00000000-0000-0000-0000-000000000001')
 ON CONFLICT (id) DO NOTHING;
 
 -- One chat per user
@@ -57,7 +57,8 @@ ON CONFLICT (id) DO NOTHING;
 -- Emergency resources
 INSERT INTO emergency_resource (id, region_code, service_name, contact_phone, contact_url, is_active)
 VALUES
-    ('00000000-0000-0000-0000-000000000401', 'RU-VOR', 'Regional Emergency Mental Health Hotline', '+7-800-000-00-00', 'https://example.org/help', true)
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c581001', 'RU', 'Горячая линия психологической помощи МЧС России', '8 (499) 216-50-50', '', true),
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c581002', 'RU', 'Бесплатная кризисная линия доверия по России', '8 (800) 333-44-34', '', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Crisis event
@@ -69,7 +70,7 @@ VALUES
         '00000000-0000-0000-0000-000000000501',
         '00000000-0000-0000-0000-000000000201',
         '00000000-0000-0000-0000-000000000303',
-        '00000000-0000-0000-0000-000000000401',
+        'a4c8dc31-8ea0-4d74-8a3a-b4174c581001',
         'critical',
         'open',
         'Escalated to emergency hotline recommendation.',
@@ -118,14 +119,20 @@ ON CONFLICT (id) DO NOTHING;
 -- Specialists and appointment
 INSERT INTO specialist (id, full_name, profession, license_number, is_verified, rating_avg)
 VALUES
-    ('00000000-0000-0000-0000-000000000801', 'Dr. Elena Petrova', 'psychologist', 'PSY-77-123456', true, 4.80)
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c582001', 'Воронежский областной клинический психоневрологический диспансер', 'psychiatrist', '', true, null),
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c582002', 'Медико-психологический центр «Modus-Vivendi»', 'psychiatrist', '', true, null),
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c582003', 'Психологический центр «Первый шаг»', 'psychologist', '', true, null),
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c582004', 'Психологический центр «Персона»', 'psychologist', '', true, null)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO specialist_location (
     id, specialist_id, address_line, city, latitude, longitude, consultation_price, currency, is_active
 )
 VALUES
-    ('00000000-0000-0000-0000-000000000811', '00000000-0000-0000-0000-000000000801', 'Lenina st. 10, office 5', 'Voronezh', 51.661500, 39.200200, 2500.00, 'RUB', true)
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c583001', 'a4c8dc31-8ea0-4d74-8a3a-b4174c582001', 'ул. 20-летия Октября, 73, Воронеж', 'Воронеж', 51.649327, 39.188411, null, 'RUB', true),
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c583002', 'a4c8dc31-8ea0-4d74-8a3a-b4174c582002', 'ул. Кирова, 9, офис 28, Воронеж', 'Воронеж', 51.656585, 39.189732, 3500.00, 'RUB', true),
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c583003', 'a4c8dc31-8ea0-4d74-8a3a-b4174c582003', 'ул. Владимира Невского, 38Е, Воронеж', 'Воронеж', 51.710835, 39.154877, 3000.00, 'RUB', true),
+    ('a4c8dc31-8ea0-4d74-8a3a-b4174c583004', 'a4c8dc31-8ea0-4d74-8a3a-b4174c582004', 'ул. Кирова, 9, офис 12, Воронеж', 'Воронеж', 51.656585, 39.189732, 3200.00, 'RUB', true)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO appointment (id, user_id, specialist_id, location_id, start_at, end_at, status, created_at)
@@ -133,8 +140,8 @@ VALUES
     (
         '00000000-0000-0000-0000-000000000901',
         '00000000-0000-0000-0000-000000000002',
-        '00000000-0000-0000-0000-000000000801',
-        '00000000-0000-0000-0000-000000000811',
+        'a4c8dc31-8ea0-4d74-8a3a-b4174c582003',
+        'a4c8dc31-8ea0-4d74-8a3a-b4174c583003',
         now() + interval '2 days',
         now() + interval '2 days 1 hour',
         'confirmed',

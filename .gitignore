@@ -1,19 +1,87 @@
-.idea/
-.venv/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# ---------------------------------------------------------------------------
+# MindHelper gitignore
+# Keeps local environments, generated files, caches and secrets out of Git.
+# ---------------------------------------------------------------------------
 
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.coverage
+coverage.xml
+htmlcov/
+
+# Pytest temporary cache directories created on Windows
+pytest-cache-files-*/
+backend/pytest-cache-files-*/
+
+# Virtual environments and local Python builds
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+build/
+dist/
+
+# Django generated/runtime files
+backend/staticfiles/
+backend/media/
+backend/db.sqlite3
+*.sqlite3
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+*Telegram_Api*.txt
+*telegram*token*.txt
+*secret*.txt
+*.pem
+*.key
+*.crt
+
+# Node / frontend
+node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-backend/.pytest_cache/
-backend/.ruff_cache/
-backend/htmlcov/
-backend/.coverage
-backend/staticfiles/
-backend/media/
-backend/.env
+# IDE and OS files
+.idea/
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
 
+# Local temporary folders
+.tmp/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Logs
+*.log
+logs/
+
+# Generated local exports that should not be versioned by accident
+*.bak
+*.orig
+~$*

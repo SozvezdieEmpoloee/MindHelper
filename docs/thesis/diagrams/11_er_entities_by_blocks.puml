@@ -1,0 +1,83 @@
+@startuml
+title MindHelper ER: entities and relationships
+
+hide methods
+hide stereotypes
+left to right direction
+
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam roundcorner 12
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam defaultFontName "Arial"
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam ArrowFontSize 12
+
+skinparam entity {
+  BorderColor #334155
+  FontColor #0F172A
+  BackgroundColor #F8FAFC
+}
+
+entity "user_account" as user #EAF3FF
+entity "channel_account" as channel #EAF3FF
+entity "role" as role
+entity "user_role" as user_role
+
+entity "user_chat" as chat #EAF3FF
+entity "chat_message" as message #EAF3FF
+entity "neural_model_version" as model #F3ECFF
+
+entity "crisis_event" as crisis #FFF4E6
+entity "safety_audit_log" as audit #FFF4E6
+entity "emergency_resource" as resource
+
+entity "assessment_template" as assessment_template #EAFBF1
+entity "assessment_question" as assessment_question #EAFBF1
+entity "assessment_session" as assessment_session #EAFBF1
+entity "assessment_answer" as assessment_answer #EAFBF1
+
+entity "specialist" as specialist
+entity "specialist_location" as location
+entity "appointment" as appointment
+
+entity "moderation_case" as moderation #F3ECFF
+entity "site_content" as content #F3ECFF
+
+user ||--o{ channel : "1:N"
+user ||--o{ user_role : "1:N"
+role ||--o{ user_role : "1:N"
+
+user ||--|| chat : "1:1"
+chat ||--o{ message : "1:N"
+model ||--o{ chat : "1:N"
+
+chat ||--o{ crisis : "1:N"
+message ||--o{ crisis : "1:N"
+resource ||--o{ crisis : "1:N"
+
+chat ||--o{ audit : "1:N"
+message ||--o{ audit : "1:N"
+crisis ||--o{ audit : "1:N"
+model ||--o{ audit : "1:N"
+
+user ||--o{ assessment_session : "1:N"
+chat ||--o{ assessment_session : "1:N"
+assessment_template ||--o{ assessment_question : "1:N"
+assessment_template ||--o{ assessment_session : "1:N"
+assessment_session ||--o{ assessment_answer : "1:N"
+assessment_question ||--o{ assessment_answer : "1:N"
+
+user ||--o{ appointment : "1:N"
+specialist ||--o{ location : "1:N"
+specialist ||--o{ appointment : "1:N"
+location ||--o{ appointment : "1:N"
+
+user ||--o{ moderation : "1:N"
+chat ||--o{ moderation : "1:N"
+message ||--o{ moderation : "1:N"
+user ||--o{ content : "1:N"
+
+@enduml

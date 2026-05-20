@@ -1,0 +1,116 @@
+digraph ERCompact {
+  graph [
+    rankdir=LR,
+    bgcolor="white",
+    splines=ortho,
+    nodesep=0.45,
+    ranksep=0.75,
+    dpi=180,
+    margin=0.05
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    fontname="Arial",
+    fontsize=15,
+    color="#334155",
+    fillcolor="#F8FAFC",
+    margin="0.10,0.06"
+  ];
+
+  edge [
+    color="#475569",
+    arrowsize=0.55,
+    penwidth=1.1
+  ];
+
+  subgraph cluster_identity {
+    label="Identity";
+    color="#CBD5E1";
+    user_account;
+    role;
+    user_role;
+    channel_account;
+  }
+
+  subgraph cluster_chat {
+    label="Chat";
+    color="#CBD5E1";
+    user_chat [fillcolor="#EAF3FF"];
+    chat_message [fillcolor="#EAF3FF"];
+  }
+
+  subgraph cluster_safety {
+    label="Safety";
+    color="#CBD5E1";
+    crisis_event [fillcolor="#FFF4E6"];
+    safety_audit_log [fillcolor="#FFF4E6"];
+    emergency_resource [fillcolor="#F7F7F7"];
+  }
+
+  subgraph cluster_model {
+    label="Neural model";
+    color="#CBD5E1";
+    neural_model_version [fillcolor="#F3ECFF"];
+  }
+
+  subgraph cluster_assessments {
+    label="Assessments";
+    color="#CBD5E1";
+    assessment_template [fillcolor="#EAFBF1"];
+    assessment_question [fillcolor="#EAFBF1"];
+    assessment_session [fillcolor="#EAFBF1"];
+    assessment_answer [fillcolor="#EAFBF1"];
+  }
+
+  subgraph cluster_directory {
+    label="Directory";
+    color="#CBD5E1";
+    specialist;
+    specialist_location;
+    appointment;
+  }
+
+  subgraph cluster_admin {
+    label="Administration";
+    color="#CBD5E1";
+    moderation_case [fillcolor="#F3ECFF"];
+    site_content [fillcolor="#F3ECFF"];
+  }
+
+  user_account -> user_role;
+  role -> user_role;
+  user_account -> channel_account;
+
+  user_account -> user_chat;
+  neural_model_version -> user_chat;
+  user_chat -> chat_message;
+
+  user_chat -> crisis_event;
+  chat_message -> crisis_event;
+  emergency_resource -> crisis_event;
+
+  user_chat -> safety_audit_log;
+  chat_message -> safety_audit_log;
+  crisis_event -> safety_audit_log;
+  neural_model_version -> safety_audit_log;
+
+  assessment_template -> assessment_question;
+  assessment_template -> assessment_session;
+  user_account -> assessment_session;
+  user_chat -> assessment_session;
+  assessment_session -> assessment_answer;
+  assessment_question -> assessment_answer;
+
+  specialist -> specialist_location;
+  user_account -> appointment;
+  specialist -> appointment;
+  specialist_location -> appointment;
+
+  user_account -> neural_model_version;
+  user_account -> moderation_case;
+  user_account -> site_content;
+  user_chat -> moderation_case;
+  chat_message -> moderation_case;
+}

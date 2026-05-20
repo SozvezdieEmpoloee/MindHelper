@@ -1,0 +1,23 @@
+@startuml
+title Устройство Qwen под капотом
+
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName "Times New Roman"
+
+start
+:Входной текст\nсообщение + история + system prompt;
+:Токенизация\nразбиение текста на токены;
+:Embedding layer\nчисловые представления токенов;
+:Стек decoder-блоков Transformer\nRMSNorm + self-attention + MLP;
+note right
+Self-attention учитывает
+контекст диалога.
+KV-cache ускоряет
+продолжение генерации.
+end note
+:Output head\nвероятности следующих токенов;
+:Декодирование\ntemperature, max tokens, stop;
+:Сгенерированный ответ;
+stop
+@enduml

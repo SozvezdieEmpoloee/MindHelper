@@ -1,0 +1,125 @@
+@startuml
+title ER-модель MindHelper
+
+hide methods
+hide stereotypes
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam roundcorner 10
+skinparam shadowing false
+skinparam defaultTextAlignment left
+skinparam defaultFontName "Times New Roman"
+
+entity "user_account" as user {
+  *id : uuid <<PK>>
+  --
+  email : varchar <<UK>>
+  password_hash : varchar
+  display_name : varchar
+  status : varchar
+  is_staff : boolean
+  is_superuser : boolean
+}
+
+entity "channel_account" as channel {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  channel_type : varchar
+  external_user_id : varchar
+  external_chat_id : varchar
+  is_active : boolean
+}
+
+entity "user_chat" as chat {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, UK>>
+  model_version_id : uuid <<FK>>
+  status : varchar
+}
+
+entity "chat_message" as message {
+  *id : uuid <<PK>>
+  --
+  chat_id : uuid <<FK>>
+  sender_role : varchar
+  content_text : text
+  risk_score : numeric
+  created_at : timestamptz
+}
+
+entity "crisis_event" as crisis {
+  *id : uuid <<PK>>
+  --
+  chat_id : uuid <<FK>>
+  trigger_message_id : uuid <<FK>>
+  emergency_resource_id : uuid <<FK>>
+  risk_level : varchar
+  status : varchar
+  screening_status : varchar
+  screening_answers : jsonb
+}
+
+entity "safety_audit_log" as audit {
+  *id : uuid <<PK>>
+  --
+  chat_id : uuid <<FK>>
+  message_id : uuid <<FK>>
+  crisis_event_id : uuid <<FK>>
+  model_version_id : uuid <<FK>>
+  route_code : varchar
+  escalation_action : varchar
+  human_review_flag : boolean
+}
+
+entity "neural_model_version" as model {
+  *id : uuid <<PK>>
+  --
+  version_tag : varchar <<UK>>
+  model_name : varchar
+  provider : varchar
+  safety_profile : varchar
+  is_active : boolean
+}
+
+entity "emergency_resource" as resource {
+  *id : uuid <<PK>>
+  --
+  region_code : varchar
+  service_name : varchar
+  contact_phone : varchar
+  is_active : boolean
+}
+
+entity "specialist" as specialist {
+  *id : uuid <<PK>>
+  --
+  full_name : varchar
+  profession : varchar
+  is_verified : boolean
+}
+
+entity "specialist_location" as location {
+  *id : uuid <<PK>>
+  --
+  specialist_id : uuid <<FK>>
+  address_line : varchar
+  city : varchar
+  latitude : numeric
+  longitude : numeric
+}
+
+user ||--o{ channel
+user ||--|| chat
+chat ||--o{ message
+chat ||--o{ crisis
+message ||--o{ crisis
+resource ||--o{ crisis
+model ||--o{ chat
+model ||--o{ audit
+chat ||--o{ audit
+message ||--o{ audit
+crisis ||--o{ audit
+specialist ||--o{ location
+@enduml

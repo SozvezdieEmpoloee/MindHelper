@@ -53,7 +53,7 @@ class ChatMessage(models.Model):
 class CrisisEvent(models.Model):
     class RiskLevel(models.TextChoices):
         LOW = "low", "Low"
-        MEDIUM = "medium", "Medium"
+        ELEVATED = "elevated", "Elevated"
         HIGH = "high", "High"
         CRITICAL = "critical", "Critical"
 
@@ -61,6 +61,11 @@ class CrisisEvent(models.Model):
         OPEN = "open", "Open"
         RESOLVED = "resolved", "Resolved"
         DISMISSED = "dismissed", "Dismissed"
+
+    class ScreeningStatus(models.TextChoices):
+        NOT_REQUIRED = "not_required", "Not required"
+        PENDING = "pending", "Pending"
+        COMPLETED = "completed", "Completed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     chat = models.ForeignKey(UserChat, on_delete=models.CASCADE, related_name="crisis_events")
@@ -80,6 +85,13 @@ class CrisisEvent(models.Model):
     )
     risk_level = models.CharField(max_length=16, choices=RiskLevel.choices)
     status = models.CharField(max_length=32, choices=Status.choices)
+    screening_status = models.CharField(
+        max_length=24,
+        choices=ScreeningStatus.choices,
+        default=ScreeningStatus.NOT_REQUIRED,
+    )
+    screening_question_index = models.PositiveSmallIntegerField(default=0)
+    screening_answers = models.JSONField(default=list, blank=True)
     action_note = models.TextField(blank=True)
     detected_at = models.DateTimeField(default=timezone.now)
     resolved_at = models.DateTimeField(blank=True, null=True)
@@ -87,4 +99,3 @@ class CrisisEvent(models.Model):
     class Meta:
         db_table = "crisis_event"
         ordering = ("-detected_at",)
-

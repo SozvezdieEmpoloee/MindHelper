@@ -30,8 +30,9 @@ class CrisisEventSerializer(serializers.ModelSerializer):
             "emergency_resource",
             "risk_level",
             "status",
+            "screening_status",
+            "screening_question_index",
             "action_note",
             "detected_at",
             "resolved_at",
         )
-

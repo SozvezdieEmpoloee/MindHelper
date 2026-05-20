@@ -1,0 +1,34 @@
+@startuml
+title Safety-flow и профиль состояния
+
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName "Times New Roman"
+
+start
+:Текст пользователя;
+fork
+  :Правила риска\nидеация, метод, намерение,\nсрочность, подготовка;
+fork again
+  :Профиль состояния\nтревога, усталость, сон,\nперегрузка, апатия;
+fork again
+  :Контекст\nсам пользователь / третье лицо /\nхудожественный пример;
+end fork
+
+if (risk_level?) then (low)
+  :Поддерживающий диалог;
+  :Генерация LLM разрешена;
+elseif (elevated)
+  :Бережный совет;
+  :Генерация LLM с ограничениями;
+elseif (high)
+  :Уточняющий скрининг;
+  :Свободная генерация ограничена;
+else (critical)
+  :Экстренные контакты;
+  :Свободная генерация запрещена;
+endif
+
+:Запись safety_audit_log;
+stop
+@enduml
